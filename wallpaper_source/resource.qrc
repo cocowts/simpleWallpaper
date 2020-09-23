@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/image">
+        <file>image/logo.ico</file>
+        <file>image/about.png</file>
+        <file>image/exit.png</file>
+        <file>image/help.png</file>
+        <file>image/setting.png</file>
+        <file>image/color.png</file>
+        <file>image/font.png</file>
+    </qresource>
+    <qresource prefix="/language">
+        <file>qt_zh_CN.qm</file>
+    </qresource>
+</RCC>
