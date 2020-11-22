@@ -86,10 +86,16 @@ public slots:
     void setColor(const QColor &color);
     void setAccentState(ACCENT_STATE accentState);
 
+private slots:
+    void onUpdateWindowCompositionAttribute();
+
 private:
     QColor m_color = QColor(255, 255, 255, 0);
     ACCENT_STATE m_accentState = ACCENT_ENABLE_GRADIENT;
     QTimer m_timer;
+
+    HWND m_hTray;
+    pfnSetWindowCompositionAttribute m_setWindowCompositionAttribute;
 };
 
 #endif // TASKBARCONTROL_H

@@ -2,34 +2,17 @@
 
 TaskbarControl::TaskbarControl(QObject *parent) : QObject(parent)
 {
-    HWND hTray = FindWindow(L"Shell_TrayWnd", NULL);
     HMODULE hUser = GetModuleHandle(L"user32.dll");
-    pfnSetWindowCompositionAttribute setWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
+    m_hTray = FindWindow(L"Shell_TrayWnd", NULL);
+    m_setWindowCompositionAttribute = (pfnSetWindowCompositionAttribute)GetProcAddress(hUser, "SetWindowCompositionAttribute");
 
-    if (hUser && setWindowCompositionAttribute)
+    if (hUser && m_setWindowCompositionAttribute)
     {
-            connect(&m_timer, &QTimer::timeout, [=](){
+        connect(&m_timer, &QTimer::timeout, this, &TaskbarControl::onUpdateWindowCompositionAttribute);
 
-                DWORD color = m_color.alpha()<<24|m_color.blue()<<16|m_color.green()<<8|m_color.red();
-
-                ACCENT_POLICY accent = { m_accentState, 2, color, 0 };
-
-                if (m_accentState == ACCENT_ENABLE_BLURBEHIND)
-                {
-                    accent.GradientColor = QColor(255, 255, 255, 0).rgba();
-                }
-
-                WINDOWCOMPOSITIONATTRIBDATA data;
-                data.Attrib = WCA_ACCENT_POLICY;
-                data.pvData = &accent;
-                data.cbData = sizeof(accent);
-                setWindowCompositionAttribute(hTray, &data);
-            });
+        m_timer.start(10);
     }
-
-    m_timer.start(15);
 }
-
 
 void TaskbarControl::setAutoHide(bool hide)
 {
@@ -44,6 +27,7 @@ void TaskbarControl::setAutoHide(bool hide)
     {
         apBar.lParam = lParam;
         SHAppBarMessage(ABM_SETSTATE, &apBar);
+        onUpdateWindowCompositionAttribute();
     }
 }
 
@@ -53,6 +37,23 @@ void TaskbarControl::setAccentState(ACCENT_STATE state, QColor color)
     m_color = color;
 }
 
+void TaskbarControl::onUpdateWindowCompositionAttribute()
+{
+    DWORD color = m_color.alpha()<<24|m_color.blue()<<16|m_color.green()<<8|m_color.red();
+
+    ACCENT_POLICY accent = { m_accentState, 2, color, 0 };
+
+    if (m_accentState == ACCENT_ENABLE_BLURBEHIND)
+        accent.GradientColor = QColor(255, 255, 255, 0).rgba();
+
+    WINDOWCOMPOSITIONATTRIBDATA data;
+    data.Attrib = WCA_ACCENT_POLICY;
+    data.pvData = &accent;
+    data.cbData = sizeof(accent);
+
+    if (m_setWindowCompositionAttribute)
+        m_setWindowCompositionAttribute(m_hTray, &data);
+}
 
 QColor TaskbarControl::color() const
 {
@@ -63,7 +64,6 @@ void TaskbarControl::setColor(const QColor &color)
 {
     m_color = color;
 }
-
 
 TaskbarControl::ACCENT_STATE TaskbarControl::accentState() const
 {

@@ -37,5 +37,5 @@ void CharacterLabel::setColor(const QColor &color)
     m_color = color;
 
     setStyleSheet(QStringLiteral("QLabel {color:rgba(%1, %2, %3, %4);}")
-                                       .arg(color.red()).arg(color.green()).arg(color.blue()).arg(color.alpha()));
+                                        .arg(color.red()).arg(color.green()).arg(color.blue()).arg(color.alpha()));
 }

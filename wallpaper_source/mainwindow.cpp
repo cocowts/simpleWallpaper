@@ -55,7 +55,6 @@ MainWindow::~MainWindow()
     m_pTaskbarControl->setAccentState(TaskbarControl::ACCENT_ENABLE_GRADIENT);
     m_pTaskbarControl->setColor(QColor(255, 255, 255));
     m_pTaskbarControl->setAutoHide(false);
-    Sleep(30);
 }
 
 void MainWindow::initUi()
@@ -235,8 +234,6 @@ void MainWindow::initSystemTray()
     m_pTrayIcon->show();
 }
 
-
-#include <QDebug>
 void MainWindow::initConctol()
 {
     m_pInstance = new VlcInstance(VlcCommon::args(), this);
@@ -339,6 +336,8 @@ bool MainWindow::loadResourcesFile()
     if (m_filesPath.at(0).endsWith(QStringLiteral(".gif"), Qt::CaseInsensitive))
     {
         createMovieWallpaper(m_filesPath.at(0));
+
+        m_pCharacterLbl->setVisible(m_pCharacterVisibleBox->isChecked());
     }
     else if (m_filesPath.at(0).endsWith(QStringLiteral(".jpg"), Qt::CaseInsensitive)
           || m_filesPath.at(0).endsWith(QStringLiteral(".jpeg"), Qt::CaseInsensitive)
@@ -348,16 +347,17 @@ bool MainWindow::loadResourcesFile()
           || m_filesPath.at(0).endsWith(QStringLiteral(".ico"), Qt::CaseInsensitive))
     {
         createImageWallpaper(m_filesPath);
+
+        m_pCharacterLbl->setVisible(m_pCharacterVisibleBox->isChecked());
     }
     else if (m_filesPath.at(0).endsWith(QStringLiteral(".mp4"), Qt::CaseInsensitive)
           || m_filesPath.at(0).endsWith(QStringLiteral(".flv"), Qt::CaseInsensitive)
           || m_filesPath.at(0).endsWith(QStringLiteral(".rmvb"), Qt::CaseInsensitive)
-          || m_filesPath.at(0).endsWith(QStringLiteral(".avi"), Qt::CaseInsensitive))
+          || m_filesPath.at(0).endsWith(QStringLiteral(".avi"), Qt::CaseInsensitive)
+          || m_filesPath.at(0).endsWith(QStringLiteral(".mkv"), Qt::CaseInsensitive))
     {
         createVideoWallpaper(m_filesPath.at(0));
     }
-
-    m_pCharacterLbl->setVisible(m_pCharacterVisibleBox->isChecked());
 
     return true;
 }
@@ -465,14 +465,13 @@ void MainWindow::createVideoWallpaper(const QString &file)
     m_pVedioLbl->installEventFilter(this);
     SetParent((HWND)m_pVedioLbl->winId(), findDeskTopWindow());
     media->setParent(media);
-
-    m_pPlayer->openOnly(media);
+    media->setOption(":–directx-use-sysmem");
+    media->setOption(":avcodec-threads=0");
+    media->setOption(":avcodec-fast");
     m_pPlayer->setVideoWidget(m_pVedioLbl);
-    media->setOption(":clock-jitter=0");
-    m_pPlayer->play();
-
     m_pVedioLbl->showFullScreen();
     m_pPlayer->audio()->setVolume(m_pVolumeSlider->value());
+    m_pPlayer->open(media);
 }
 
 void MainWindow::createDefaultWallpaper(const QString &filePath)
@@ -556,13 +555,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
-    if (object == m_pImageLbl || object == m_pMovieLbl)
+    if (object == m_pImageLbl || object == m_pMovieLbl || object == m_pVedioLbl)
     {
         switch (event->type())
         {
         case QEvent::Show:
             m_pCharacterLbl->setParent(qobject_cast<QWidget*>(object));
-            if (m_pCharacterVisibleBox->isChecked())
+            if (m_pCharacterVisibleBox->isChecked() && object != m_pVedioLbl)
                 m_pCharacterLbl->show();
             break;
         case QEvent::Hide:
@@ -594,7 +593,7 @@ void MainWindow::onSelectResourcesBtnClicked()
     if (m_pResourcesFileRadioBtn->isChecked())
     {
         fileFilters.append("动画文件(*.gif)");
-        fileFilters.append("视频文件(*.flv *.rmvb *.avi *.mp4)");
+        fileFilters.append("视频文件(*.flv *.rmvb *.avi *.mp4 *.mkv)");
         fd.setFileMode(QFileDialog::ExistingFile);
     }
     else
@@ -657,7 +656,7 @@ void MainWindow::onCharacteLblMove()
 
 void MainWindow::onCharacteLblCheckShow(bool sta)
 {
-    if (m_pMovieLbl != nullptr || m_pImageLbl != nullptr || m_pVedioLbl != nullptr)
+    if (m_pMovieLbl != nullptr || m_pImageLbl != nullptr)
         m_pCharacterLbl->setVisible(sta);
 }
 
